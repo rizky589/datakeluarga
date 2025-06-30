@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import date
 import gspread
+import json
 from oauth2client.service_account import ServiceAccountCredentials
 
 # ======== FUNGSI SIMPAN & CEK DUPLIKAT =========
@@ -9,7 +10,9 @@ def connect_sheet():
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+    # Ambil kredensial dari secrets.toml
+    service_account_info = dict(st.secrets["google_service_account"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
     client = gspread.authorize(creds)
 
     spreadsheet_id = "1LOv15OJL__vKiok8qmJqPGt4Je4nmxVSV0_a0ed8L5w"
@@ -26,7 +29,6 @@ def simpan_ke_sheets(data):
     sheet.append_row([""] + data, value_input_option="USER_ENTERED")
 
 # ========== UI FORM ============
-
 st.set_page_config(page_title="Form Pendataan Kepala Keluarga", layout="centered")
 st.title("📝 Form Pendataan Kepala Keluarga")
 
@@ -53,7 +55,6 @@ with st.form("form_kepala_keluarga", clear_on_submit=True):
     simpan = st.form_submit_button("💾 Simpan & Lanjut")
 
 # ========== LOGIKA SIMPAN ============
-
 if simpan:
     if not all([noKK, nama_KepalaKeluarga, dusun, alamat, nama_petugas, nama_petugas1]):
         st.warning("⚠️ Semua kolom wajib diisi. Pastikan tidak ada yang kosong.")
@@ -63,16 +64,13 @@ if simpan:
         st.error("❌ No KK ini sudah pernah diinput! Harap cek kembali.")
         st.stop()
     else:
-        # ✅ Reset semua variabel form anggota sebelumnya
         for key in ["anggota_ke", "jumlah_anggota", "anggota_data", "edit_index"]:
             st.session_state.pop(key, None)
 
-        # Simpan ke session untuk digunakan di form_anggota.py
         st.session_state.no_kk = noKK
         st.session_state.nama_kk = nama_KepalaKeluarga
         st.session_state.jumlah_anggota = jumlah_anggota
 
-        # Simpan ke Google Sheets (tanpa format text / formula)
         data_keluarga = [
             noKK,
             nama_KepalaKeluarga,

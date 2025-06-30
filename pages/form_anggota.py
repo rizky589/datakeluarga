@@ -3,7 +3,6 @@ from datetime import date
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
-from collections import defaultdict
 
 # Fungsi hitung umur otomatis
 def hitung_umur(tgl_lahir):
@@ -13,7 +12,7 @@ def hitung_umur(tgl_lahir):
 # Koneksi ke Google Sheets
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["google_service_account"], scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
     client = gspread.authorize(creds)
     return client.open_by_key("1LOv15OJL__vKiok8qmJqPGt4Je4nmxVSV0_a0ed8L5w").worksheet("Anggota")
 
@@ -132,16 +131,32 @@ if simpan:
 
 try:
     df = ambil_semua_data()
+    df = df[df['no kk'] == f"'{str(st.session_state.no_kk)}"]
     if not df.empty:
-        grouped = defaultdict(list)
+        st.write("## ✏️ Daftar Anggota Saat Ini:")
         for _, row in df.iterrows():
-            grouped[row['no kk']].append(row)
-
-        st.write("## 🧾 Daftar Keluarga (Group by No KK):")
-        for kk, anggota_list in grouped.items():
-            st.markdown(f"### 🆔 No KK: `{kk}`")
-            for i, row in enumerate(anggota_list, start=1):
-                st.markdown(f"- {row['nama']} — `{row['nik']}` — {row['shdk']}, Umur: {row['umur']}")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"**{row['nama']}** — NIK: `{row['nik']}` — {row['shdk']}, Umur: {row['umur']}")
+            with col2:
+                if st.button("🖊️ Edit", key=f"edit_{row['nik']}"):
+                    st.session_state.edit_mode = True
+                    st.session_state.edit_nik = row['nik']
+                    st.session_state.edit_nama = row['nama']
+                    st.session_state.edit_keberadaan = row['keberadaan']
+                    st.session_state.edit_tgl = date.strptime(row['tanggal lahir'], "%d/%m/%Y")
+                    st.session_state.edit_jk = row['jenis kelamin']
+                    st.session_state.edit_ijazah = row['ijazah']
+                    st.session_state.edit_status = row['status perkawinan']
+                    st.session_state.edit_status_pekerjaan = row['status pekerjaan']
+                    st.session_state.edit_pekerjaan = row['pekerjaan utama']
+                    st.session_state.edit_lapangan = row['lapangan usaha']
+                    st.session_state.edit_shdk = row['shdk']
+                    st.experimental_rerun()
+                if st.button("🗑️ Hapus", key=f"hapus_{row['nik']}"):
+                    if hapus_berdasarkan_nik(row['nik']):
+                        st.success(f"✅ Data {row['nama']} berhasil dihapus!")
+                        st.rerun()
     else:
         st.info("Belum ada data untuk ditampilkan.")
 except Exception as e:

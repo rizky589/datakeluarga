@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date
+from datetime import date, datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
@@ -12,13 +12,13 @@ def hitung_umur(tgl_lahir):
 # Koneksi ke Google Sheets
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["google_service_account"], scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
     client = gspread.authorize(creds)
     return client.open_by_key("1LOv15OJL__vKiok8qmJqPGt4Je4nmxVSV0_a0ed8L5w").worksheet("Anggota")
 
 def cek_nik_ganda(nik_baru):
     sheet = get_sheet()
-    existing_data = sheet.col_values(5)[1:]
+    existing_data = sheet.col_values(4)[1:]
     return nik_baru in existing_data
 
 def simpan_ke_sheets(data):
@@ -33,7 +33,7 @@ def ambil_semua_data():
 
 def hapus_berdasarkan_nik(nik):
     sheet = get_sheet()
-    col = sheet.col_values(5)
+    col = sheet.col_values(4)
     for idx, val in enumerate(col):
         if val.strip() == nik:
             sheet.delete_rows(idx + 1)
@@ -42,7 +42,7 @@ def hapus_berdasarkan_nik(nik):
 
 def update_berdasarkan_nik(nik_lama, data_baru):
     sheet = get_sheet()
-    col = sheet.col_values(5)
+    col = sheet.col_values(4)
     for idx, val in enumerate(col):
         if val.strip() == nik_lama:
             sheet.delete_rows(idx + 1)
@@ -131,7 +131,8 @@ if simpan:
 
 try:
     df = ambil_semua_data()
-    df = df[df['no kk'] == f"'{str(st.session_state.no_kk)}"]
+    df['no kk'] = df['no kk'].str.replace("'", "")
+    df = df[df['no kk'] == str(st.session_state.no_kk)]
     if not df.empty:
         st.write("## ✏️ Daftar Anggota Saat Ini:")
         for _, row in df.iterrows():
@@ -144,7 +145,7 @@ try:
                     st.session_state.edit_nik = row['nik']
                     st.session_state.edit_nama = row['nama']
                     st.session_state.edit_keberadaan = row['keberadaan']
-                    st.session_state.edit_tgl = date.strptime(row['tanggal lahir'], "%d/%m/%Y")
+                    st.session_state.edit_tgl = datetime.strptime(row['tanggal lahir'], "%d/%m/%Y").date()
                     st.session_state.edit_jk = row['jenis kelamin']
                     st.session_state.edit_ijazah = row['ijazah']
                     st.session_state.edit_status = row['status perkawinan']

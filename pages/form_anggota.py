@@ -153,7 +153,7 @@ try:
                     st.session_state.edit_pekerjaan = row['pekerjaan utama']
                     st.session_state.edit_lapangan = row['lapangan usaha']
                     st.session_state.edit_shdk = row['shdk']
-                    st.experimental_rerun()
+                    st.rerun()
                 if st.button("🗑️ Hapus", key=f"hapus_{row['nik']}"):
                     if hapus_berdasarkan_nik(row['nik']):
                         st.success(f"✅ Data {row['nama']} berhasil dihapus!")

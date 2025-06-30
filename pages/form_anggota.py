@@ -64,12 +64,12 @@ if kk_cari:
         hasil = df[df['no kk'] == kk_cari.strip()]
         if not hasil.empty:
             st.success(f"Ditemukan {len(hasil)} anggota keluarga dengan No KK {kk_cari}:")
-            for _, row in hasil.iterrows():
-                col1, col2 = st.columns([3, 1])
+            for idx, row in hasil.iterrows():
+                col1, col2, col3 = st.columns([3, 1, 1])
                 with col1:
                     st.markdown(f"**{row['nama']}** — NIK: `{row['nik']}` — {row['shdk']}, Umur: {row['umur']}")
                 with col2:
-                    if st.button("🖊️ Edit", key=f"edit_cari_{row['nik']}"):
+                    if st.button(f"🖊️ Edit {idx}"):
                         st.session_state.no_kk = row['no kk']
                         st.session_state.nama_kk = row['nama kk']
                         st.session_state.edit_mode = True
@@ -85,7 +85,8 @@ if kk_cari:
                         st.session_state.edit_lapangan = row['lapangan usaha']
                         st.session_state.edit_shdk = row['shdk']
                         st.rerun()
-                    if st.button("🗑️ Hapus", key=f"hapus_cari_{row['nik']}"):
+                with col3:
+                    if st.button(f"🗑️ Hapus {idx}"):
                         if hapus_berdasarkan_nik(row['nik']):
                             st.success(f"✅ Data {row['nama']} berhasil dihapus!")
                             st.rerun()

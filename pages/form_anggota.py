@@ -53,23 +53,23 @@ def update_berdasarkan_nik(nik_lama, data_baru):
 st.set_page_config(page_title="Form Anggota Keluarga", layout="centered")
 st.title("🧝 Form Anggota Keluarga")
 
-# ===== FORM PENCARIAN BERDASARKAN NO KK =====
-st.subheader("🔍 Cari Keluarga Berdasarkan No KK")
-kk_cari = st.text_input("Masukkan No KK untuk mencari")
+# ================= Fitur Pencarian No KK =====================
+st.subheader("🔍 Cari Berdasarkan No KK")
+no_kk_cari = st.text_input("Masukkan No KK untuk mencari", max_chars=20)
 
-if kk_cari:
+if st.button("🔎 Cari"):
     try:
         df = ambil_semua_data()
         df['no kk'] = df['no kk'].str.replace("'", "")
-        hasil = df[df['no kk'] == kk_cari.strip()]
+        hasil = df[df['no kk'] == no_kk_cari.strip()]
         if not hasil.empty:
-            st.success(f"Ditemukan {len(hasil)} anggota keluarga dengan No KK {kk_cari}:")
-            for idx, row in hasil.iterrows():
-                col1, col2, col3 = st.columns([3, 1, 1])
+            st.success(f"Ditemukan {len(hasil)} anggota dengan No KK {no_kk_cari}:")
+            for _, row in hasil.iterrows():
+                col1, col2 = st.columns([3, 1])
                 with col1:
                     st.markdown(f"**{row['nama']}** — NIK: `{row['nik']}` — {row['shdk']}, Umur: {row['umur']}")
                 with col2:
-                    if st.button(f"🖊️ Edit {idx}"):
+                    if st.button("🖊️ Edit", key=f"edit_search_{row['nik']}"):
                         st.session_state.no_kk = row['no kk']
                         st.session_state.nama_kk = row['nama kk']
                         st.session_state.edit_mode = True
@@ -85,19 +85,11 @@ if kk_cari:
                         st.session_state.edit_lapangan = row['lapangan usaha']
                         st.session_state.edit_shdk = row['shdk']
                         st.rerun()
-                with col3:
-                    if st.button(f"🗑️ Hapus {idx}"):
+                    if st.button("🗑️ Hapus", key=f"hapus_search_{row['nik']}"):
                         if hapus_berdasarkan_nik(row['nik']):
                             st.success(f"✅ Data {row['nama']} berhasil dihapus!")
                             st.rerun()
         else:
-            st.warning("Tidak ditemukan data dengan No KK tersebut.")
+            st.info("Tidak ditemukan data dengan No KK tersebut.")
     except Exception as e:
-        st.error(f"Gagal mengambil data: {e}")
-
-# === Tombol kembali ===
-if st.button("🔙 Kembali ke Form Keluarga"):
-    for key in ["anggota_ke", "jumlah_anggota", "anggota_data", "no_kk", "nama_kk"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.rerun()
+        st.error(f"Terjadi kesalahan saat pencarian: {e}")
